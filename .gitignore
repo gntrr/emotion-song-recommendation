@@ -1,0 +1,69 @@
+# -----------------------------
+# OS / Editor
+# -----------------------------
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# -----------------------------
+# Python
+# -----------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+backend/.venv/
+frontend/.venv/
+
+# Python lock / build artifacts
+*.egg-info/
+build/
+dist/
+
+# -----------------------------
+# Node / Frontend
+# -----------------------------
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+frontend/.cache/
+frontend/*.tsbuildinfo
+
+# -----------------------------
+# Environment variables / secrets
+# -----------------------------
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+frontend/.env.*
+
+# -----------------------------
+# Runtime / local generated data
+# -----------------------------
+*.log
+logs/
+backend/data/*.csv
+
+# -----------------------------
+# Docker / misc
+# -----------------------------
+*.local
+docs/

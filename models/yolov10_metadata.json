@@ -1,0 +1,8 @@
+{
+  "model_name": "yolov10n-face",
+  "weights_file": "yolov10n-fallback.pt",
+  "input_size": 640,
+  "confidence_threshold": 0.5,
+  "source": "https://github.com/akanametov/yolo-face/releases/download/v0.0.0/yolov10n-face.pt",
+  "usage": "Stage 1 dari two-stage detection pipeline"
+}

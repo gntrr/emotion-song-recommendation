@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://your-frontend-domain.com}
+      SONG_API_BASE_URL: ${SONG_API_BASE_URL:-https://your-song-api-domain.com}
+      YOLO_MODEL_PATH: ${YOLO_MODEL_PATH:-../models/yolov10n-fallback.pt}
+      EMOTION_MODEL_PATH: ${EMOTION_MODEL_PATH:-../models/mini_xception_final.h5}
+      YOLO_CONFIDENCE_THRESHOLD: ${YOLO_CONFIDENCE_THRESHOLD:-0.5}
+      EMOTION_CONFIDENCE_THRESHOLD: ${EMOTION_CONFIDENCE_THRESHOLD:-0.4}
+      SONG_API_TIMEOUT: ${SONG_API_TIMEOUT:-5}
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_BACKEND_BASE_URL: ${VITE_BACKEND_BASE_URL:-https://your-backend-domain.com}
+        VITE_SONG_API_BASE_URL: ${VITE_SONG_API_BASE_URL:-https://your-song-api-domain.com}
+    depends_on:
+      - backend
+    restart: unless-stopped

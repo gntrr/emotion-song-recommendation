@@ -1,0 +1,15 @@
+[project]
+name = "emotion-song-recommendation"
+version = "1.0.0"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+dev = "dev:main"
+
+[tool.hatch.build.targets.wheel]
+include = ["dev.py"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
