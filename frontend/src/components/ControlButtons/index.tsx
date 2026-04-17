@@ -3,7 +3,6 @@ import { Button, Space } from 'antd';
 import React from 'react';
 
 interface ControlButtonsProps {
-  isStreaming: boolean;
   isDetecting: boolean;
   onStart: () => void;
   onStop: () => void;
@@ -11,7 +10,6 @@ interface ControlButtonsProps {
 }
 
 export const ControlButtons: React.FC<ControlButtonsProps> = ({
-  isStreaming,
   isDetecting,
   onStart,
   onStop,

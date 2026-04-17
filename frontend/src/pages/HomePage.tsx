@@ -102,7 +102,6 @@ export const HomePage: React.FC = () => {
       <Content style={{ padding: '20px 16px' }}>
         <div style={{ marginBottom: 16, textAlign: 'center' }}>
           <ControlButtons
-            isStreaming={isStreaming}
             isDetecting={isDetecting}
             onStart={() => void handleStart()}
             onStop={handleStop}
