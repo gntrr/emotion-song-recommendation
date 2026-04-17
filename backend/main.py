@@ -168,6 +168,16 @@ async def process_frame(req: ProcessFrameRequest):
     )
 
 
+@app.get("/recommend")
+async def recommend(emotion: str, top_n: int = 5):
+    if not recommender_client:
+        raise HTTPException(status_code=503, detail="Layanan rekomendasi tidak tersedia.")
+    data = recommender_client.get_recommendations(emotion=emotion, top_n=top_n)
+    if data is None:
+        raise HTTPException(status_code=502, detail="Gagal menghubungi Song API.")
+    return data
+
+
 @app.post("/submit-kuesioner")
 async def submit_kuesioner(req: KuesionerRequest):
     file_exists = os.path.isfile(config.KUESIONER_CSV_PATH)

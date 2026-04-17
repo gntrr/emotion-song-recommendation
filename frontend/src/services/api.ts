@@ -1,7 +1,6 @@
 import type { DetectionResult, KuesionerData, RecommendationResponse } from '../types';
 
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:5000';
-const SONG_API_BASE_URL = import.meta.env.VITE_SONG_API_BASE_URL || 'http://localhost:8000';
 
 export const TOP_N_SONGS = 5;
 export const RECOMMENDATION_DEBOUNCE = 3000;
@@ -19,7 +18,7 @@ export async function processFrame(imageBase64: string, frameCount: number): Pro
 }
 
 export async function getRecommendations(emotion: string): Promise<RecommendationResponse> {
-  const url = new URL(`${SONG_API_BASE_URL}/recommend`);
+  const url = new URL(`${BACKEND_BASE_URL}/recommend`);
   url.searchParams.set('emotion', emotion);
   url.searchParams.set('top_n', String(TOP_N_SONGS));
 

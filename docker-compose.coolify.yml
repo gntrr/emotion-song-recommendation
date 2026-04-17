@@ -21,7 +21,6 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_BACKEND_BASE_URL: ${VITE_BACKEND_BASE_URL:-https://your-backend-domain.com}
-        VITE_SONG_API_BASE_URL: ${VITE_SONG_API_BASE_URL:-https://your-song-api-domain.com}
     depends_on:
       - backend
     restart: unless-stopped
