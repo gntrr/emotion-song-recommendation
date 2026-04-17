@@ -1,4 +1,5 @@
 import logging
+import os
 
 import numpy as np
 
@@ -16,9 +17,7 @@ def _build_mini_xception(num_classes: int = 6, input_shape: tuple = (48, 48, 1))
                 MaxPool2D(3,strides=2,padding=same)
                 residual shortcut: Conv2D(f,1,strides=2,padding=same) → BN
                 add residual
-      - GlobalAveragePooling2D → Flatten
-      - Dense(num_classes, use_bias=False)
-      - Softmax
+      - Conv2D(num_classes,3,padding=same) → GlobalAveragePooling2D → Flatten → Softmax
     """
     from tensorflow import keras  # type: ignore
     from tensorflow.keras import layers  # type: ignore
@@ -58,22 +57,55 @@ def _build_mini_xception(num_classes: int = 6, input_shape: tuple = (48, 48, 1))
     return keras.Model(inp, out, name="mini_xception")
 
 
-def _load_model_compat(model_path: str):
-    """Build Mini-Xception architecture then load weights from H5 file.
+class _TFBackend:
+    """TensorFlow/Keras inference backend (local dev, Intel Mac)."""
 
-    Bypasses Keras model_config entirely — avoids all Keras 3 vs TF 2.10
-    serialisation incompatibilities.
-    """
-    model = _build_mini_xception()
-    param_count = model.count_params()
-    logger.debug("Built Mini-Xception: %d params", param_count)
+    def __init__(self, model_path: str) -> None:
+        model = _build_mini_xception()
+        model.load_weights(model_path)
+        self._model = model
 
-    model.load_weights(model_path)
-    return model
+    def predict(self, inp: np.ndarray) -> np.ndarray:
+        return self._model.predict(inp, verbose=0)[0]
+
+
+class _OnnxBackend:
+    """ONNX Runtime inference backend (Docker / servers without AVX/SSE4.1)."""
+
+    def __init__(self, model_path: str) -> None:
+        import onnxruntime as ort  # type: ignore
+
+        self._session = ort.InferenceSession(model_path)
+        self._input_name = self._session.get_inputs()[0].name
+
+    def predict(self, inp: np.ndarray) -> np.ndarray:
+        out = self._session.run(None, {self._input_name: inp.astype(np.float32)})[0]
+        return out[0]
+
+
+def _load_backend(model_path: str):
+    """Pick ONNX backend if .onnx file exists, otherwise fall back to TF."""
+    # Direct ONNX path
+    if model_path.endswith(".onnx"):
+        return _OnnxBackend(model_path)
+
+    # .h5 given — prefer sibling .onnx file (cross-platform, no SSE4.1 needed)
+    onnx_path = os.path.splitext(model_path)[0] + ".onnx"
+    if os.path.exists(onnx_path):
+        logger.info("ONNX model found, using ONNX Runtime backend: %s", onnx_path)
+        return _OnnxBackend(onnx_path)
+
+    # Fall back to TensorFlow (requires SSE4.1 on Linux x86-64)
+    logger.info("Using TensorFlow backend: %s", model_path)
+    return _TFBackend(model_path)
 
 
 class EmotionClassifier:
-    """Mini-Xception emotion classification wrapper."""
+    """Mini-Xception emotion classification wrapper.
+
+    Automatically selects ONNX Runtime when a sibling .onnx file exists
+    (avoids TF SSE4.1/AVX requirement on production servers).
+    """
 
     def __init__(
         self,
@@ -83,17 +115,17 @@ class EmotionClassifier:
     ) -> None:
         self.labels = labels
         self.confidence_threshold = confidence_threshold
-        self._model = None
+        self._backend = None
         self._available = False
 
         try:
-            self._model = _load_model_compat(model_path)
+            self._backend = _load_backend(model_path)
             self._available = True
-            logger.info("Mini-Xception model loaded from: %s", model_path)
-        except ImportError:
-            logger.warning("TensorFlow/Keras not available — emotion classification disabled")
+            logger.info("Emotion classifier ready (%s)", model_path)
+        except ImportError as exc:
+            logger.warning("ML backend unavailable: %s — emotion classification disabled", exc)
         except (FileNotFoundError, OSError):
-            logger.warning("Emotion model file not found: %s — classification disabled", model_path)
+            logger.warning("Emotion model not found: %s — classification disabled", model_path)
         except Exception as exc:
             logger.warning("Failed to load emotion model: %s — classification disabled", exc)
 
@@ -113,7 +145,7 @@ class EmotionClassifier:
                 "all_scores": {label: score, ...},
             }
         """
-        if not self._available or self._model is None:
+        if not self._available or self._backend is None:
             return {
                 "emotion_label": "Tidak Terdeteksi",
                 "confidence": 0.0,
@@ -121,7 +153,7 @@ class EmotionClassifier:
             }
 
         try:
-            preds = self._model.predict(preprocessed_input, verbose=0)[0]
+            preds = self._backend.predict(preprocessed_input)
             all_scores = {label: float(score) for label, score in zip(self.labels, preds)}
             max_idx = int(np.argmax(preds))
             max_conf = float(preds[max_idx])
